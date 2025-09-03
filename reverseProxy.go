@@ -5,9 +5,44 @@ import (
 	"io"
 	"log"
 	"net"
+    "go.xela.tech/abuseipdb"
 )
 
+func checkIpBlock(ip string) bool {
+	for _, blockedIp := range getConfig().Blocks {
+		if blockedIp == ip {
+			return true
+		}
+	}
+
+	// Check with AbuseIPDB
+	if getConfig().AbuseIPDBKey != "" {
+		client := abuseipdb.NewClient(getConfig().AbuseIPDBKey)
+		report, err := client.Check(ip)
+		if err != nil {
+			log.Printf("Error checking IP with AbuseIPDB: %s", err)
+			return false
+		}
+		if report.Data.AbuseConfidenceScore >= 30 {
+			log.Printf("Blocked connection from %s due to high abuse confidence score (%d)", ip, report.Data.AbuseConfidenceScore)
+			addIpBlock(ip)
+			return true
+		}
+	}
+	return false
+}
+
 func handleClient(client net.Conn, target string, server ServerType, protocol string) {
+	remoteAddr := client.RemoteAddr().(*net.TCPAddr)
+	log.Printf("Connection from %s\n", remoteAddr.IP.String())
+
+	// Check if the ip is blocked using GetConfig().Blocks
+	if checkIpBlock(remoteAddr.IP.String()) {
+		log.Printf("Blocked connection from %s\n", remoteAddr.IP.String())
+		client.Close()
+		return
+	}
+
 	incrementPlayerCount(server)
 	defer decrementPlayerCount(server)
 	serverConnection, err := net.Dial(protocol, target)

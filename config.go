@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"os"
+	"log"
 )
 
 type OthersType struct {
@@ -30,6 +31,8 @@ type Config struct {
 	Timeout int `json:"timeout"`
 	AutoShutdown bool `json:"auto_shutdown"`
 	Addresses []ServerType `json:"addresses"`
+	Blocks []string `json:"blocks"`
+	AbuseIPDBKey string `json:"abuse_ipdb_key"`
 }
 
 func loadConfig() Config {
@@ -74,4 +77,39 @@ func getConfig() *Config{
 	}
 
 	return singleConfigInstance;
+}
+
+func addIpBlock(ip string) {
+	config := getConfig()
+	for _, blockedIp := range config.Blocks {
+		if blockedIp == ip {
+			return // IP is already blocked
+		}
+	}
+	config.Blocks = append(config.Blocks, ip)
+	err := saveConfig(*config)
+	if err != nil {
+		log.Printf("Error saving config after adding IP block: %s", err)
+	}
+}
+
+func saveConfig(config Config) error {
+	file, err := os.Create("./config.json")
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	
+	byteValue, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		return err
+	}
+	_, err = file.Write(byteValue)
+
+	if err == nil {
+        // Update the singleton instance to the new config
+        singleConfigInstance = &config
+    }
+
+	return err
 }

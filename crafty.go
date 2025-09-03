@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"io"
 	"net"
@@ -10,19 +9,6 @@ import (
 	"strings"
 	"time"
 )
-
-type LoginResponse struct {
-	Status string `json:"status"`
-	Data   struct {
-		Token   string `json:"token"`
-		User_id string `json:"user_id"`
-	} `json:"data"`
-}
-
-type LoginPayload struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
 
 type Server struct {
 	ServerId string `json:"server_id"`
@@ -55,30 +41,7 @@ func awaitForServerStart(protocol string, target string) net.Conn {
 }
 
 func getBearer() string {
-	loginBody := LoginPayload{
-		Username: getConfig().Username,
-		Password: getConfig().Password,
-	}
-	jsonData, _ := json.Marshal(loginBody)
-	resp, err := http.Post(getConfig().ApiUrl+"/api/v2/auth/login", "application/json", bytes.NewBuffer(jsonData))
-	if err != nil {
-		panic("Could not connect to the server\n")
-	}
-
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		panic("Could not read response body\n")
-	}
-
-	var response LoginResponse
-	err = json.Unmarshal(body, &response)
-	if err != nil {
-		panic("Could not decode JSON\n")
-	}
-
-	return "Bearer " + response.Data.Token
+	return "Bearer " + getConfig().Password;
 }
 
 func getServers(bearer string) ServerList {
