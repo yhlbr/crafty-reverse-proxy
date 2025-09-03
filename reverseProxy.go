@@ -14,6 +14,11 @@ func checkIpBlock(ip string) bool {
 			return true
 		}
 	}
+	for _, allowedIp := range getConfig().Allows {
+		if allowedIp == ip {
+			return false
+		}
+	}
 
 	// Check with AbuseIPDB
 	if getConfig().AbuseIPDBKey != "" {
@@ -27,6 +32,10 @@ func checkIpBlock(ip string) bool {
 			log.Printf("Blocked connection from %s due to high abuse confidence score (%d)", ip, report.Data.AbuseConfidenceScore)
 			addIpBlock(ip)
 			return true
+		} else {
+			log.Printf("Allowed connection from %s with abuse confidence score (%d)", ip, report.Data.AbuseConfidenceScore)
+			addIpAllow(ip)
+			return false
 		}
 	}
 	return false

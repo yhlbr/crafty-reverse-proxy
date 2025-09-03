@@ -32,6 +32,7 @@ type Config struct {
 	AutoShutdown bool `json:"auto_shutdown"`
 	Addresses []ServerType `json:"addresses"`
 	Blocks []string `json:"blocks"`
+	Allows []string `json:"allows"`
 	AbuseIPDBKey string `json:"abuse_ipdb_key"`
 }
 
@@ -90,6 +91,20 @@ func addIpBlock(ip string) {
 	err := saveConfig(*config)
 	if err != nil {
 		log.Printf("Error saving config after adding IP block: %s", err)
+	}
+}
+
+func addIpAllow(ip string) {
+	config := getConfig()
+	for _, allowedIp := range config.Allows {
+		if allowedIp == ip {
+			return // IP is already allowed
+		}
+	}
+	config.Allows = append(config.Allows, ip)
+	err := saveConfig(*config)
+	if err != nil {
+		log.Printf("Error saving config after adding IP allow: %s", err)
 	}
 }
 
