@@ -34,6 +34,7 @@ type Config struct {
 	Blocks []string `json:"blocks"`
 	Allows []string `json:"allows"`
 	AbuseIPDBKey string `json:"abuse_ipdb_key"`
+	AbuseConfidenceScore int `json:"abuse_confidence_score"`
 }
 
 func loadConfig() Config {

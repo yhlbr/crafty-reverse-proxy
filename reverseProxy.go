@@ -9,26 +9,28 @@ import (
 )
 
 func checkIpBlock(ip string) bool {
-	for _, blockedIp := range getConfig().Blocks {
+	config := getConfig()
+
+	for _, blockedIp := range config.Blocks {
 		if blockedIp == ip {
 			return true
 		}
 	}
-	for _, allowedIp := range getConfig().Allows {
+	for _, allowedIp := range config.Allows {
 		if allowedIp == ip {
 			return false
 		}
 	}
 
 	// Check with AbuseIPDB
-	if getConfig().AbuseIPDBKey != "" {
-		client := abuseipdb.NewClient(getConfig().AbuseIPDBKey)
+	if config.AbuseIPDBKey != "" {
+		client := abuseipdb.NewClient(config.AbuseIPDBKey)
 		report, err := client.Check(ip)
 		if err != nil {
 			log.Printf("Error checking IP with AbuseIPDB: %s", err)
 			return false
 		}
-		if report.Data.AbuseConfidenceScore >= 30 {
+		if report.Data.AbuseConfidenceScore >= config.AbuseConfidenceScore {
 			log.Printf("Blocked connection from %s due to high abuse confidence score (%d)", ip, report.Data.AbuseConfidenceScore)
 			addIpBlock(ip)
 			return true
